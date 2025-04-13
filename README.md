@@ -10,6 +10,8 @@ you can downland the html to see the turiol
 
 ------------------------------------------------------------------------
 
+<br>
+
 ## Genome Coordinate Conversion 🌍
 
 When conducting research, we need to unify the genome coordinate system. The process of converting from one version of the coordinate system to another is called **liftover (UCSC)** or **crossmap (Ensembl)**.
@@ -20,6 +22,8 @@ When conducting research, we need to unify the genome coordinate system. The pro
     [**Ensembl** web version](https://grch37.ensembl.org/Homo_sapiens/Tools/AssemblyConverter) 🌐 **(Only supports species: human, mouse, Caenorhabditis elegans, Saccharomyces cerevisiae, Zebrafish)**
 
 ------------------------------------------------------------------------
+
+<br>
 
 ## Peak Overlap 📊
 
@@ -34,6 +38,8 @@ This section covers how to find overlaps of peaks:
 -   **`makeVennDiagram()`**: Create Venn Diagrams to visualize peak overlaps.
 
 ------------------------------------------------------------------------
+
+<br>
 
 ## **Peak Annotation, Comparison, and Visualization** 🔬✨
 
