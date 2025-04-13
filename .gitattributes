@@ -4,3 +4,5 @@
 *.Rmd linguist-language=R \n
 *.html linguist-language=R \n
 *.png linguist-language=R \n
+*.csv linguist-language=R \n
+*.over.chain linguist-language=R
