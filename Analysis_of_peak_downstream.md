@@ -2103,4 +2103,7 @@ downloadGEObedFilesHTTPS(genome="rn5", destDir="rn5")
 
 - We can use `enrichPeakOverlap()` function to assess **Statistical testing** . detail see 🪨[[#ChIP-seq Overlap Statistical testing]]  🔗[ChIP-seq Overlap Statistical testing](#ChIP-seq-Overlap-Statistical-testing)<br><br>
 
-- In different genome versions, parameter `chainFile` that can pass a `chain file` and `liftOver` the `targetPeak` to the genome version consistent with `queryPeak`
+- In different genome versions, parameter `chainFile` that can pass a `chain file` and `liftOver` the `targetPeak` to the genome version consistent with `queryPeak`     
+
+
+
