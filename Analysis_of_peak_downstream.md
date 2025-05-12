@@ -69,6 +69,7 @@ This part about [`ChIPseeker`](https://bioconductor.org/packages/release/bioc/vi
 | **BAM/SAM** | **1-based** | 比对起始位置为 1-based，CIGAR 操作的结果确定终止位置 |
 | **LiftOver** | **0-based** | 输入文件通常是 0-based（如 BED） |
 | **CrossMap** | **根据输入格式** | 支持多种格式，如 BED（0-based）、GTF/GFF/VCF（1-based） |
+
 <br>
 
 ------------------------------------------------------------------------
@@ -470,6 +471,7 @@ seqlevelsStyle(edb) <- "UCSC"
 | attributes    | `key=value`                                        | `key "value"`                          |
 | attributes 层级 | 明确层级关系（gene → mRNA → exon/CDS）                     | 层级关系相对不严格                              |
 | 支持的特征         | 更丰富（gene, mRNA, exon, CDS, ncRNA, repeat_region 等） | 主要针对转录组数据（gene, transcript, exon, CDS） |
+
 <br>
 
 ---
