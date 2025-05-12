@@ -28,13 +28,15 @@ When conducting research, we need to unify the genome coordinate system. The pro
 
 This part about how to find overlaps of peaks?
 
--   First, we use the peak files to create `GRanges` objects.
-<br>
--   `findOverlaps()` : Creating `NCList` and `GNCList` objects to find the overlaps between two "range-based" objects.
-<br>
--   `findOverlapsOfPeaks()` :Ising `findOverlaps()` another version for peaks.
-<br>
--   `makeVennDiagram()` : Making Venn Diagram for peaks.
+- First, we use the peak files to create `GRanges` objects.<br><br>
+
+- `findOverlaps()` : Creating `NCList` and `GNCList` objects to find the overlaps between two "range-based" objects.<br><br>
+
+- `findOverlapsOfPeaks()` : Using `findOverlaps()`—another version for peaks.<br><br>
+
+- `makeVennDiagram()` : Making Venn Diagram for peaks.<br><br>
+
+
 
 <br>
 
