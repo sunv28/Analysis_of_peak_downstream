@@ -57,10 +57,8 @@ This part about [`ChIPseeker`](https://bioconductor.org/packages/release/bioc/vi
 
 ## 0-base or 1-base？
 
--   [详见](https://genome-blog.gi.ucsc.edu/blog/2016/12/12/the-ucsc-genome-browser-coordinate-counting-systems/)
-<br>
+-   [详见](https://genome-blog.gi.ucsc.edu/blog/2016/12/12/the-ucsc-genome-browser-coordinate-counting-systems/)<br>
 -   在**0-based**坐标系中，起始位置从 0 开始计数，范围是 **[start, end)** ，即 **end 位置不包含在区间内**。
-<br>
 -   在**1-based**坐标系中，起始位置从 1 开始计数，范围是 **[start, end]** ，即 **end 位置包含在区间内**。
 
 | 文件格式 | 坐标系统 | 说明 |
