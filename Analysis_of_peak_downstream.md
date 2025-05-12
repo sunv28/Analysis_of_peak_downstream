@@ -231,7 +231,7 @@ peak2 <- toGRanges("peak2.bed", format="BED")
 
 ### IRanges objects
 
-- `IRanges`(IntegerRanges)** **lack** the information of `seqnames` and `strand` and add the width information comparing to `GRanges`
+- `IRanges`(IntegerRanges) **lack** the information of `seqnames` and `strand` and add the width information comparing to `GRanges`
 
 ```R
 # 创建 IRanges 对象
@@ -256,7 +256,7 @@ IRanges object with 3 ranges and 0 metadata columns:
 ## NCList and GNCList objects
 
 - 如果query中有$Q$个区间，subject中有$S$个区间，传统方法需要进行$Q×S$次比较。
-    <BR>
+    <br>
 - `NCList` 通过分区和排序，嵌套分组，这样，每次搜索时只需要在相关层次中寻找，而不需要扫描所有区间
 
 	  <img src="./picture/005.png" width="700"/>
