@@ -34,7 +34,7 @@ This part about how to find overlaps of peaks?
 
 - `findOverlapsOfPeaks()` : Using `findOverlaps()`—another version for peaks.<br><br>
 
-- `makeVennDiagram()` : Making Venn Diagram for peaks.<br><br>
+- `makeVennDiagram()` : Making Venn Diagram for peaks.
 
 
 
@@ -44,10 +44,9 @@ This part about how to find overlaps of peaks?
 
 ## Peak Annotation, Comparison and Visualization Preface
 
-This part about [`ChIPseeker`](https://bioconductor.org/packages/release/bioc/vignettes/ChIPseeker/inst/doc/ChIPseeker.html) usage, an R package for **peak Annotation, Comparison and Visualization**
+This part about [`ChIPseeker`](https://bioconductor.org/packages/release/bioc/vignettes/ChIPseeker/inst/doc/ChIPseeker.html) usage, an R package for **peak Annotation, Comparison and Visualization**  
 
--   If two ChIP Seq data, obtained by two different binding proteins, overlap significantly, these two proteins may form a complex or have interaction in regulation chromosome remodelling or gene expression. 
-<br>
+-   If two ChIP Seq data, obtained by two different binding proteins, overlap significantly, these two proteins may form a complex or have interaction in regulation chromosome remodelling or gene expression.    
 -   [`ChIPseeker`](https://bioconductor.org/packages/release/bioc/vignettes/ChIPseeker/inst/doc/ChIPseeker.html) support statistical testing of significant overlap among ChIP seq data sets, and incorporate open access database GEO (contains **17,000 bed file**) for users to compare their own dataset to those deposited in database
 <br>
 -   Converting genome coordinations from one genome version to another is also supported
