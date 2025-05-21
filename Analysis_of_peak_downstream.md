@@ -1049,6 +1049,11 @@ GRanges object with 2 ranges and 2 metadata columns:
 - `findOverlapsOfPeaks()`相比`findOverlaps()` 支持**Vene图可视化，peak注释，peak可视化等功能**。
   
 - `findOverlapsOfPeaks()` 会生成一个 `overlappingPeaks` **list.**
+- `findOverlapsOfPeaks()` 可以对三个或三个以上的`GRanges`找交集
+
+<br>
+
+### Create GRanges objects
 
 ```r
 query <- GRanges(seqnames = c("chr1","chr1","chr1","chr1","chr1"),
@@ -1065,6 +1070,13 @@ subject <- GRanges(seqnames = c("chr1", "chr1","chr1","chr1"),
                    score = c(20, 40, 20,30),
                    strand="+")
 ```
+
+>[!Danger]
+>`query` 和 `subject` 中的 names 一定为唯一、非空的向量，否则，在后续的`findOverlapsOfPeaks`中，该函数会重新对不是唯一、非空的向量重新命名。
+
+<br>
+
+### Find Overlaps Of Peaks
 
 ```r
 overlappingPeaks <- findOverlapsOfPeaks(query,
@@ -1086,9 +1098,8 @@ overlappingPeaks <- findOverlapsOfPeaks(query,
       
     - setting it to `min` will add 2 to the `Counts`
       
-	
 	<br>
-    
+
 	这里的`Counts`是指`overlappingPeaks` list 中的 `venn_cnt` object，用于韦恩图画图用
 	```r
 	overlappingPeaks[["venn_cnt"]]
@@ -1113,98 +1124,450 @@ overlappingPeaks <- findOverlapsOfPeaks(query,
 
 <br>
 
----
-## overlappingPeaks list
+### overlappingPeaks list
 
 `overlappingPeaks` list 由以下objects构成
 
-- `venn_cnt` : an **object** of `VennCounts` ，用于韦恩图画图用
+- `venn_cnt` : an **object** of `VennCounts` ，用于韦恩图画图用<br><br>
+- `peaklist`： a **list** of `GRanges` object which contain all **overlapping peaks** or **unique peaks**<br><br>
   
-- `peaklist`： a **list** of `GRanges` object which contain all **overlapping peaks** or **unique peaks**
+- `uniquePeaks`：an **object** of `GRanges` consists of all **unique peaks**<br><br>
   
-- `uniquePeaks`：an **object** of `GRanges` consists of all **unique peaks**
+- `mergedPeaks`： an **object** of `GRanges` consists of all **merged overlapping peaks**<br><br>
   
-- `mergedPeaks`： an **object** of `GRanges` consists of all **merged overlapping peaks**
+- `peaksInMergedPeaks`： an **object** of `GRanges` consists of all peaks in each samples involved in the overlapping peaks<br><br>
   
-- `peaksInMergedPeaks`： an **object** of `GRanges` consists of all peaks in each samples involved in the overlapping peaks
-  
-- `overlappingPeaks`： a **list** of **data frame** consists of the annotation of all the overlapped peaks
-  
+- `overlappingPeaks`： a **list** of **data frame** consists of the annotation of all the overlapped peaks 
+	**<font color="#ff0000">注意</font>**：这里的 **data frame**只有peak有overlap就会记录，不管其重叠百分比是否大于`findOverlapsOfPeaks()`中设置`minoverlap`
+	```r
+	overlappingPeaks$overlappingPeaks$`query///subject`
+	```
+	```text
+	        peaks1  seqnames  start  end   width  strand  score  peaks2  seqnames  start  end   width  strand  score  overlapFeature   shortestDistance
+	a_A     a       chr1     100    200    101     +       10     A       chr1     150    250    101     +       20     overlapStart       50
+	a_B     a       chr1     100    200    101     +       10     B       chr1     175    450    276     +       40     overlapStart       25
+	b_B     b       chr1     300    400    101     +       20     B       chr1     175    450    276     +       40     inside             50
+	c_C     c       chr1     500    600    101     +       30     C       chr1     550    650    101     +       20     overlapStart       50
+	d_A     d       chr1     100    400    301     +       24     A       chr1     150    250    101     +       20     includeFeature     50
+	d_B     d       chr1     100    400    301     +       24     B       chr1     175    450    276     +       40     overlapStart       50
+	e_A     e       chr1     135    334    200     +       32     A       chr1     150    250    101     +       20     includeFeature     15
+	e_B     e       chr1     135    334    200     +       32     B       chr1     175    450    276     +       40     overlapStart       40
+	```
+
+	其中：
+	* `overlapFeature`: 两个peak之间的重叠特征
+ 
+		|类型名|含义说明|
+		|---|---|
+		|**`includeFeature`**|`peaks1` 包含 `peaks2`（前面已解释）|
+		|**`inside`**|`peaks2` 包含 `peaks1`（前面已解释）|
+		|**`overlapStart`**|`peaks1` 与 `peaks2` 起点重叠（前面已解释）|
+		|**`overlapEnd`**|`peaks1` 与 `peaks2` 末端重叠|
+		|**`equal`**|`peaks1` 和 `peaks2` 完全一致|
+		|**`upstream`**|`peaks2` 在 `peaks1` 之前，**无重叠**，方向无关|
+		|**`downstream`**|`peaks2` 在 `peaks1` 之后，**无重叠**，方向无关|
+	
+		  
+	- `shortestDistance` ：两个peak之间的最短距离
+		- 无重叠：即$start1-end2$ 和$start2-end1$的最小值
+		- 若重叠：计算边界距离 ，则需比较所有边界组合的最小绝对值：$min(|start1-start2|, |end1-end2|,|end2-start1|,|end1-start2|)$
+
+<br>
+
 - `all.peaks`： a **list** of `GRanges` object which contain the **input peaks** with **formated rownames**.
 
 <img src="./picture/012.png" width="700"/>
 
 <br>
 
+### Customisable overlapping peaks data frame
+- 我们可以从上述的`overlappingPeaks$overlappingPeaks`中的表格计算min overlap ratio，overlap_peak，以及merge_peak
+
+<br>
+
+- 我们自定义了一个`calculate_peak_overlap_metrics`function 来完成上述的功能
+	```R
+	calculate_peak_overlap_metrics <- function(df, 
+	                                            start1_col, end1_col, 
+	                                            start2_col, end2_col, 
+	                                            plot_hist = TRUE) {
+	  
+	  # Extract coordinates
+	  start1 <- df[[start1_col]]
+	  end1 <- df[[end1_col]]
+	  start2 <- df[[start2_col]]
+	  end2 <- df[[end2_col]]
+	  
+	  # overlap peak
+	  overlap_start <- pmax(start1, start2)
+	  overlap_end <- pmin(end1, end2)
+	  overlap_len <- pmax(0, overlap_end - overlap_start + 1)
+	  
+	  # merge peak
+	  merge_start <- pmin(start1, start2)
+	  merge_end <- pmax(end1, end2)
+	  merge_len <- pmax(0, merge_end - merge_start + 1)
+	  
+	  # Raw peak length
+	  width1 <- pmax(0, end1 - start1 + 1)
+	  width2 <- pmax(0, end2 - start2 + 1)
+	  
+	  # Minimum percentage of overlap
+	  min_overlap_ratio <- overlap_len / pmin(width1, width2)
+	  
+	  # add to table
+	  df$overlap_start <- overlap_start
+	  df$overlap_end <- overlap_end
+	  df$overlap_width <- overlap_len
+	  df$min_overlap_ratio <- min_overlap_ratio
+	  df$merge_start <- merge_start
+	  df$merge_end <- merge_end
+	  df$merge_width <- merge_len
+
+	  #If overlap_len == 0, set overlap_start and overlap_end to NA
+	  df$overlap_start <- ifelse(df$overlap_width > 0, df$overlap_start, NA)
+	  df$overlap_end <- ifelse(df$overlap_width > 0, df$overlap_end, NA)
+	  
+	  # Optional drawing
+	  if (plot_hist) {
+	    hist(min_overlap_ratio, 
+	         main = "Minimum Overlap Ratio Distribution", 
+	         xlab = "Min Overlap Ratio", 
+	         col = "steelblue", 
+	         breaks = 10)
+	  }
+	  
+	  return(df)
+	}
+		
+	```
+
+- use `calculate_peak_overlap_metrics`function
+	```r
+	overlap_df <- overlappingPeaks$overlappingPeaks$`query///subject`
+
+	# check the colnames
+	colnames(overlap_df)
+	
+	# 第1个peak起止位置是第3列和第4列，第2个peak是第10列和第11列
+	overlap_df <- calculate_peak_overlap_metrics(overlap_df, 
+	                                             start1_col = 3, end1_col = 4, 
+	                                             start2_col = 10, end2_col = 11,
+	                                             plot_hist = TRUE)
+	```
+	<img src="./picture/037.png" width="500"/>
+
+- Check the result
+	```r
+	overlap_df
+	```
+	
+	```text
+	       peaks1 seqnames start end width strand score peaks2 seqnames start end width strand score   overlapFeature shortestDistance overlap_start overlap_end overlap_width min_overlap_ratio merge_start merge_end merge_width
+	a_A    a      chr1     100  200  101    +      10    A      chr1     150  250  101    +      20     overlapStart     50              150          200         51             0.5049505       100         250         151
+	a_B    a      chr1     100  200  101    +      10    B      chr1     175  450  276    +      40     overlapStart     25              175          200         26             0.2574257       100         450         351
+	b_B    b      chr1     300  400  101    +      20    B      chr1     175  450  276    +      40     inside           50              300          400         101            1.0000000       175         450         276
+	c_C    c      chr1     500  600  101    +      30    C      chr1     550  650  101    +      20     overlapStart     50              550          600         51             0.5049505       500         650         151
+	d_A    d      chr1     100  400  301    +      24    A      chr1     150  250  101    +      20     includeFeature   50              150          250         101            1.0000000       100         400         301
+	d_B    d      chr1     100  400  301    +      24    B      chr1     175  450  276    +      40     overlapStart     50              175          400         226            0.8188406       100         450         351
+	e_A    e      chr1     135  334  200    +      32    A      chr1     150  250  101    +      20     includeFeature   15              150          250         101            1.0000000       135         334         200
+	e_B    e      chr1     135  334  200    +      32    B      chr1     175  450  276    +      40     overlapStart     40              175          334         160            0.8000000       135         450         316
+	```
+
+<BR>
+
+### Multiple peak overlap
+* `findOverlapsOfPeaks()` 可以对三个或三个以上的`GRanges`找交集
+* 以下代码，演示了`findOverlapsOfPeaks()` 可以对三个或三个以上的`GRanges`找交集：把 information of merge peaks 提出出来，并且把 source peaks 信息记录。
+```r
+# ----------------------------- #
+#         载入所需的 R 包       #
+# ----------------------------- #
+library(GenomicRanges)     # 用于构建和操作基因组区间对象 GRanges
+library(ChIPpeakAnno)      # 用于查找多个 GRanges 对象的重叠区域
+library(dplyr)             # 数据操作，如筛选、合并等
+library(tidyr)             # 数据重整，如宽长格式转换
+library(IRanges)           # 用于处理区间对象
+library(GenomeInfoDb)      # 用于设置 seqlevelsStyle（如 "UCSC" 风格）
+library(readr)             # 用于读取 CSV 文件
+
+
+# ----------------------------- #
+#        1. 读取输入文件         #
+# ----------------------------- #
+ATAC_OE_up <- read.csv("./atac_data/accessibility/oe_up.csv")
+CHIP_0625   <- read.csv("./chip_data/0625_liftover.csv")
+CHIP_1011   <- read.csv("./chip_data/1011_liftover.csv")
+
+
+# ----------------------------- #
+#     2. 构建 GRanges 对象       #
+# ----------------------------- #
+# 为每个数据框创建 GRanges 对象，包含必要的元数据
+
+gr0625 <- GRanges(
+  seqnames = CHIP_0625$seqnames,
+  ranges = IRanges(start = CHIP_0625$start, end = CHIP_0625$end, names = rownames(CHIP_0625)),
+  PEAK_NAME = CHIP_0625$group_name,
+  score = CHIP_0625$score,
+  pvalue = CHIP_0625$pvalue
+)
+
+gr1011 <- GRanges(
+  seqnames = CHIP_1011$seqnames,
+  ranges = IRanges(start = CHIP_1011$start, end = CHIP_1011$end, names = rownames(CHIP_1011)),
+  PEAK_NAME = CHIP_1011$group_name,
+  score = CHIP_1011$score,
+  pvalue = CHIP_1011$pvalue
+)
+
+grATAC <- GRanges(
+  seqnames = ATAC_OE_up$Chr,
+  ranges = IRanges(start = ATAC_OE_up$Start, end = ATAC_OE_up$End, names = ATAC_OE_up$peak_name),
+  log2fc = ATAC_OE_up$log2fc,
+  strand = "*"
+)
+
+# 将 seqnames 风格设置为 UCSC（如 chr1）
+seqlevelsStyle(grATAC) <- "UCSC"
+
+
+# ----------------------------- #
+#  3. 查找三个数据集的重叠区间   #
+# ----------------------------- #
+# 寻找 gr0625, gr1011, grATAC 三者共同重叠的 peak 区域
+overlappingPeaks <- findOverlapsOfPeaks(
+  gr0625, gr1011, grATAC,
+  maxgap = 0,               # 不允许区间之间有间隙
+  minoverlap = 0.5,         # 至少有 50% 重叠
+  ignore.strand = FALSE,    # 区分正负链
+  connectedPeaks = "keepAll"  # 保留所有原始 peak 信息
+)
+
+# 提取三者共同重叠的合并区域
+merged_peaks <- overlappingPeaks$peaklist$`gr0625///gr1011///grATAC`
+
+
+# ----------------------------- #
+#   4. 提取合并区间的基本信息    #
+# ----------------------------- #
+merge_metadata <- as.data.frame(mcols(merged_peaks))  # 提取元数据
+region_coords <- as.data.frame(merged_peaks)[, c("seqnames", "start", "end", "width", "strand")]
+region_coords$mergepeak_id <- paste0("MergePeak_", seq_len(nrow(region_coords)))
+mergepeak_info <- cbind(region_coords, merge_metadata)
+
+
+# ----------------------------- #
+#  5. 提取合并 ID 与原始 peak 的对应关系  #
+# ----------------------------- #
+peak_info <- data.frame(
+  mergepeak_id = rep(mergepeak_info$mergepeak_id, lengths(merged_peaks$peakNames)),
+  peakNames = unlist(merged_peaks$peakNames)
+) %>%
+  separate(peakNames, into = c("source", "peak_id"), sep = "__", extra = "merge")
+
+
+# ----------------------------- #
+# 6. 给原始数据添加 source 和 peak_id 列 #
+# ----------------------------- #
+CHIP_0625 <- CHIP_0625 %>%
+  mutate(source = "gr0625", peak_id = as.character(rownames(CHIP_0625)))
+
+CHIP_1011 <- CHIP_1011 %>%
+  mutate(source = "gr1011", peak_id = as.character(rownames(CHIP_1011)))
+
+ATAC_OE_up <- ATAC_OE_up %>%
+  mutate(source = "grATAC", peak_id = as.character(peak_name))
+
+# 合并所有数据为长格式（long format）
+all_data <- bind_rows(CHIP_0625, CHIP_1011, ATAC_OE_up)
+
+
+# ----------------------------- #
+# 7. 关联 mergepeak_id 与原始 peak 数据 #
+# ----------------------------- #
+merged_long <- left_join(peak_info, all_data, by = c("source", "peak_id"))
+
+
+# ----------------------------- #
+#  8. 转为宽格式（每列为一个来源）     #
+# ----------------------------- #
+merged_wide <- merged_long %>%
+  pivot_wider(
+    id_cols = mergepeak_id,
+    names_from = source,
+    values_from = c(group_name, peak_name, Start, End, start, end, score, pvalue, log2fc),
+    names_glue = "{source}_{.value}"
+  )
+
+
+# ----------------------------- #
+#    9. 合并 mergepeak 区间信息      #
+# ----------------------------- #
+merged_result <- left_join(mergepeak_info, merged_wide, by = "mergepeak_id")
+
+
+# ----------------------------- #
+#     10. 删除包含 NA 的列          #
+# ----------------------------- #
+merged_result_clean <- merged_result[, apply(merged_result, 2, function(x) all(!is.na(x)))]
+
+
+# ----------------------------- #
+#     11. 重新排列列顺序            #
+# ----------------------------- #
+col_names <- colnames(merged_result_clean)
+fixed_cols <- c("mergepeak_id", "seqnames", "start", "end", "width", "strand")
+
+# 获取不同来源的列
+grATAC_cols  <- grep("^grATAC_", col_names, value = TRUE)
+gr0625_cols  <- grep("^gr0625_", col_names, value = TRUE)
+gr1011_cols  <- grep("^gr1011_", col_names, value = TRUE)
+
+# 合并列顺序
+new_col_order <- c(fixed_cols, grATAC_cols, gr0625_cols, gr1011_cols)
+merged_result_clean <- merged_result_clean[, new_col_order]
+
+
+# ----------------------------- #
+#     12. 可选：重命名列前缀         #
+# ----------------------------- #
+colnames(merged_result_clean) <- gsub("^grATAC_", "ATAC_OE_up_", colnames(merged_result_clean))
+colnames(merged_result_clean) <- gsub("^gr0625_", "CHIP_0625_", colnames(merged_result_clean))
+colnames(merged_result_clean) <- gsub("^gr1011_", "CHIP_1011_", colnames(merged_result_clean))
+
+# 最终结果：merged_result_clean 包含三组数据共同重叠的 peaks 的详细整合信息
+head(merged_result_clean, 5)
+```
+
+
+```text
+mergepeak_id   seqnames   start       end         width   strand   ATAC_OE_up_peak_name   ATAC_OE_up_Start   ATAC_OE_up_End   ATAC_OE_up_log2fc   CHIP_0625_group_name   CHIP_0625_start   CHIP_0625_end   CHIP_0625_score   CHIP_0625_pvalue   CHIP_1011_group_name   CHIP_1011_start   CHIP_1011_end   CHIP_1011_score   CHIP_1011_pvalue
+MergePeak_1     chr2       55950704   55951250    547     *        MergePea....           55950811           55951250         0.417402           KChIP2_p....        55950854         55951181       3.55691         6.543498....         KChIP2-O....        55950704         55950997         3.44964          9.928874....
+MergePeak_2     chr2       119314279  119315027   749     *        MergePea....           119314279          119315027        0.380193           KChIP2_p....        119314335        119314854      5.09381         1.679577....         KChIP2-O....        119314290        119314705        3.25899         0.000240....
+MergePeak_3     chr2       167398491  167399240   750     *        MergePea....           167398491          167399240        0.045008           KChIP2_p....        167398871        167399169      4.69143         5.152879....         KChIP2-O....        167398661        167399236        5.55648         2.130786....
+MergePeak_4     chr2       196226566  196227552   987     *        MergePea....           196226566          196227552        0.00349            KChIP2_p....        196226679        196226948      4.69143         5.152879....         KChIP2-O....        196226685        196227227        4.60486         1.298494....
+MergePeak_5     chr1       13105079   13105568    490     *        MergePea....           13105188           13105568         0.544794           KChIP2_p....        13105104         13105421       3.36084         4.683494....         KChIP2-O....        13105079         13105394         3.43942          0.000110....
+
+```
+
+```r
+# ----------------------------- #
+#     13. 保存为 CSV 文件         #
+# ----------------------------- #
+# 推荐保存形式（将 list 转为字符）
+write_csv(
+  merged_result_clean %>%
+    mutate(across(where(is.list), ~sapply(., function(x) paste(x, collapse = ";")))),
+  file = "./overlap_atac_cuttag_1011_cuttag_0625.csv"
+)
+```
+
+<br>
+
 ---
-## Draw a vennDiagram
+## Draw a VennDiagram
 
 - `makeVennDiagram()` from packages of `ChIPpeakAnno`
   
 - `makeVennDiagram()` :Making Venn Diagram from two or more peak ranges, Also calculate p-value to determine whether those peaks overlap significantly.
-```r
-# per setting
-# color
-col = rainbow(2)
-```
 
-```r
-VennDiagram <- makeVennDiagram(
-               Peaks = list(query, subject),
-               NameOfPeaks = c("query", "subject"),
-               maxgap = 0L, # 允许重叠区域之间的最大间隙
-               minoverlap = 0.5, # 两个区域之间的最小重叠百分比
-               totalTest = 1000, # 设置总测试次数，用于计算 p 值，It should be much larger than the number of peaks in the largest peak set.
-               by = "region", 
-               ignore.strand = T,
-               connectedPeaks = "merge",
-               method = "hyperG",
-               # TxDb = TxDb #  TxDb objects   
-               plot = TRUE,  # a venn diagram is plotted
-               
-               # venn plot setting
-               alpha= 0.3, # 透明度
-               scaled = T, # 根据比例显示大小
-               
-               lwd=1, # 圆圈线条粗细
-               lty=1, # 圆圈线条形状: 1 实线, 2 虚线
-               col=col, #圆圈线条颜色: blank无线条
-               fill= col, # fill color
-               
-               # numeric labels
-               cex = 1,  # Size
-               label.col ='black', # color
-               fontface = "bold", # 字体粗细；加粗bold
+<BR>
 
-               # category labels
-               cat.cex = 1, # Size
-               cat.dist = 0.02, # 标签距离圆圈的远近
-               cat.pos = -180, # 标签相对于圆圈的角度cat.pos = c(-10, 10, 135)
-               cat.fontface = "bold",  # 标签字体加粗
-               cat.default.pos = "text"  # 标签位置, outer内;text 外
-)
-```
+* You can use `overlappingPeaks` list to draw a VennDiagram
+	```R
+	# color
+	col = rainbow(2)
+	
+	VennDiagram <- makeVennDiagram(
+	               overlappingPeaks,
+	               NameOfPeaks = c("query", "subject"),
+	               
+	               # venn plot setting
+	               alpha= 0.3, # 透明度
+	               scaled = T, # 根据比例显示大小
+	               
+	               lwd=1, # 圆圈线条粗细
+	               lty=1, # 圆圈线条形状: 1 实线, 2 虚线
+	               col=col, #圆圈线条颜色: blank无线条
+	               fill= col, # fill color
+	               
+	               # numeric labels
+	               cex = 1,  # Size
+	               label.col ='black', # color
+	               fontface = "bold", # 字体粗细；加粗bold
+	
+	               # category labels
+	               cat.cex = 1, # Size
+	               cat.dist = 0.02, # 标签距离圆圈的远近
+	               cat.pos = -180, # 标签相对于圆圈的角度cat.pos = c(-10, 10, 135)
+	               cat.fontface = "bold",  # 标签字体加粗
+	               cat.default.pos = "text"  # 标签位置, outer内;text 外
+	)
+	```
 
 <img src="./picture/014.jpg" width="500"/>
 
-<br>
+<BR>
 
-- `by`
-  
-    * `feature` : means using feature field (such as Promoter, exon) for calculating overlap
-    
-    * `region`(default): means using chromosome range for calculating overlap,
-    
-    * `base`: means calculating overlap in nucleotide level.<br><br>
-- `connectedPeaks`
-	- 这里的`connectedPeaks`多了一个参数：
-    
-    `keepFirstListConsistent` will keep the counts consistent with first list.<br><br>
-- `method`：method to be used for p value calculation
-  
-    - `hyperG`（超几何检验）：超几何分布会计算出随机情况下抽中某个重叠的概率。
-      
-    - `permutation`（置换检验）：你将这些数据打乱多次（如：将 query 和 subject 中的峰随机分配到整个 1000个区间），每次都计算一次重叠情况。然后，你比较原始数据的重叠和这些随机打乱后的重叠结果。如果原始数据的重叠结果比打乱后的结果显著（即更极端或更大），那么说明重叠结果是显著的，不太可能是偶然的。
+* You can use `GRange` objects to customise overlap and draw a VennDiagram
+	```r
+	# color
+	col = rainbow(2)
+	
+	VennDiagram <- makeVennDiagram(
+	               Peaks = list(query, subject),
+	               NameOfPeaks = c("query", "subject"),
+	               maxgap = 0L, # 允许重叠区域之间的最大间隙
+	               minoverlap = 0.5, # 两个区域之间的最小重叠百分比
+	               totalTest = 1000, # 设置总测试次数，用于计算 p 值，It should be much larger than the number of peaks in the largest peak set.
+	               by = "region", 
+	               ignore.strand = T,
+	               connectedPeaks = "merge",
+	               method = "hyperG",
+	               # TxDb = TxDb #  TxDb objects   
+	               plot = TRUE,  # a venn diagram is plotted
+	               
+	               # venn plot setting
+	               alpha= 0.3, # 透明度
+	               scaled = T, # 根据比例显示大小
+	               
+	               lwd=1, # 圆圈线条粗细
+	               lty=1, # 圆圈线条形状: 1 实线, 2 虚线
+	               col=col, #圆圈线条颜色: blank无线条
+	               fill= col, # fill color
+	               
+	               # numeric labels
+	               cex = 1,  # Size
+	               label.col ='black', # color
+	               fontface = "bold", # 字体粗细；加粗bold
+	
+	               # category labels
+	               cat.cex = 1, # Size
+	               cat.dist = 0.02, # 标签距离圆圈的远近
+	               cat.pos = -180, # 标签相对于圆圈的角度cat.pos = c(-10, 10, 135)
+	               cat.fontface = "bold",  # 标签字体加粗
+	               cat.default.pos = "text"  # 标签位置, outer内;text 外
+	)
+	```
+
+
+	- `by`
+	  
+	    * `feature` : means using feature field (such as Promoter, exon) for calculating overlap
+	    
+	    * `region`(default): means using chromosome range for calculating overlap,
+	    
+	    * `base`: means calculating overlap in nucleotide level.<br><br>
+	- `connectedPeaks`
+		- 这里的`connectedPeaks`多了一个参数：
+	    
+	    `keepFirstListConsistent` will keep the counts consistent with first list.<br><br>
+	- `method`：method to be used for p value calculation
+	  
+	    - `hyperG`（超几何检验）：超几何分布会计算出随机情况下抽中某个重叠的概率。
+	      
+	    - `permutation`（置换检验）：你将这些数据打乱多次（如：将 query 和 subject 中的峰随机分配到整个 1000个区间），每次都计算一次重叠情况。然后，你比较原始数据的重叠和这些随机打乱后的重叠结果。如果原始数据的重叠结果比打乱后的结果显著（即更极端或更大），那么说明重叠结果是显著的，不太可能是偶然的。
 
 <br>
 
@@ -1664,6 +2027,12 @@ tagMatrix[c(1:10),c(1:10)]
 	chr1     1925707  1926101  395   *      2.62105 Intron (NM_001108457/361449, intron 12 of 12)  1       1938419   1972918  34500      1          308266 NM_001107469 -12318        Zc3h12d  zinc finger CCCH type containing 12D
 	chr1     2352454  2352970  517   *      2.62105 Intron (NM_001108458/361450, intron 7 of 7)    1       2333823   2627475  293653     2          361450 NM_001108458 274505        Ust      uronyl-2-sulfotransferase
 	```
+ 
+ **<font color="#ff0000"> 注意</font>**：`annotatePeak()` 的默认输出确实**不包含原始 `GRanges` 中的 `names`（也就是每个 peak 的名字或 ID）**，需要我们进行手动添加。
+
+	```r
+	rownames(peakAnno_dataframe) <- names(peak_list[[1]])
+	```
 
 <br>
 
@@ -1676,6 +2045,66 @@ tagMatrix[c(1:10),c(1:10)]
     * 对应的**Entrez ID**为**308265**
     
     * 这个重叠的外显子是该转录本**NM_001134543** 的第4个外显子
+
+<br>
+
+## peak annotation of peaklist
+use`annotatePeak()` to annotation `peaklist`(多个`GRanges`)
+```r
+peakAnno <- list()
+peakAnno_df_list<- list()
+
+for (name in names(peak_list)) {
+
+  peakAnno[[name]] <-annotatePeak(
+    peak_list[[name]],              # Input peak data (GRanges object)
+    tssRegion = c(-3000, 3000),  # Region around TSS to annotate 
+    TxDb = TxDb,                 # Annotation database (TxDb object)
+    level = "transcript",        # Annotation level ("gene", "transcript")
+    
+    assignGenomicAnnotation = TRUE,  # annotation列是否会报告详细信息
+    
+    # Order of annotation features
+    # 定义注释的优先级，即如果一个 peak 归属于多个区域，优先按这个顺序分配
+    genomicAnnotationPriority = c("Promoter", "5UTR", "3UTR", "Exon", "Intron", "Downstream", "Intergenic"),
+    
+    # External annotation database (optional)
+    annoDb = "org.Rn.eg.db", 
+    
+    # Whether to include flanking gene regions
+    # if addFlankGeneInfo is TRUE，The program will find the nearest gene within a certain distance (flankDistance) to the peak.
+    addFlankGeneInfo = TRUE,  
+    flankDistance = 5000,  
+    sameStrand = FALSE,  # Consider only the same strand as the gene
+    ignoreOverlap = FALSE,  #  whether ignore overlap of TSS with peak
+    ignoreUpstream = FALSE,  # Ignore upstream regions
+    ignoreDownstream = FALSE,  # Ignore downstream regions
+    
+    # Type of overlap ("TSS" or "all")
+    # overlap = "TSS":(deafult),When the peak covers TSS (transcription start site), the gene is considered to be the nearest gene.
+    # overlap = "all":If the peak falls in any gene region, the gene will be directly considered as the nearest gene without additionally searching for the nearest TSS
+    overlap = "TSS",  
+    verbose = TRUE,  # Whether to print progress messages
+    
+    # Specify the gene information to be output 
+    # (e.g: "ENTREZID", "ENSEMBL", "SYMBOL", "GENENAME")
+    columns = c("ENSEMBL", "SYMBOL", "GENENAME")
+  )
+  
+ 
+  # 转成数据框，并添加 peak 名字列
+  peakAnno_df <- as.data.frame(peakAnno[[name]])
+  rownames(peakAnno_df) <- names(peak_list[[name]])
+  
+  
+  # 存入列表
+  peakAnno_df_list[[name]] <- peakAnno_df
+  
+  
+  # 删除多余项
+  rm(peakAnno_df)
+}
+```
 
 <br>
 
@@ -2117,3 +2546,4 @@ downloadGEObedFilesHTTPS(genome="rn5", destDir="rn5")
 
 
 
+[^1]: 
